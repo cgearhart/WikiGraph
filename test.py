@@ -1,39 +1,54 @@
-class Thing():
+import urllib2
+from bs4 import BeautifulSoup
 
-   def __init__(self):
-      self.thing = []
-      
-   def pop(self):
-      topThing = self.thing.pop()
-      return topThing
-      
-   def append(self,stuff):
-      self.thing.append(stuff)
-      
-   def __len__(self):
-      return len(self.thing)
-      
-   def __str__(self):
-      return repr(self.thing)
-      
-   def __iter__(self):
-      return self
-      
-   def next(self):
-      return self.pop()
-      
+baseURL = 'http://en.wikipedia.org'
+startingURL = baseURL + '/wiki/Outline_of_calculus'
+threadWords = ['Math','Mathematics','math','mathematics']
 
-aThing = Thing()
+req = urllib2.Request(startingURL, headers={'User-Agent' : '6283185307'}) # Tau FTW
+pageHandle = urllib2.urlopen( req )
+soup = BeautifulSoup(pageHandle.read())
 
-aThing.append(10)
+#print soup.body.find(text='Contents').find_all_previous(text=threadWords,limit=1)
+#print soup.prettify()
+#print soup.body.find(text='Contents').find_all_previous()
+print soup.body.find_all(text=threadWords)
 
-stop = 10
+links = [a_tag.get('href') for a_tag in soup.find_all('a') if a_tag]
+for link in links:
+   print link
 
-for thing in aThing:
-   print thing
-   print aThing
-   aThing.pop()
-   stop -= 1
-   if stop > 3:
-      aThing.append(stop)
-   print aThing
+"""
+
+while len(linkStack) and depth < 3:
+   parentURL = linkStack.pop(0)
+   if parentURL not in vistedStack:
+      visitedStack[parentURL] = {}
+   req = urllib2.Request(parentURL, headers={'User-Agent' : '628318'}) # Tau FTW
+   pageHandle = urllib2.urlopen( req )
+   soup = BeautifulSoup(pageHandle.read())
+   
+   #tests
+   # lambda x: x
+   # lambda x: x.startswith('/wiki')
+   # lambda x: x.count('#') == 0
+   # lambda x: x.count(':') == 0
+   
+
+   for link in soup.find_all('a'):
+      href = link.get('href')
+      if href and href.startswith('/wiki'): #Not None, and within wikipedia
+         if href.count('#') == 0 and href.count(':') == 0: #Not on this page
+            if href not in visitedStack:
+               linkStack.append(href)
+               visitedStack[href] = {}
+               visitedStack[href][parentURL] = None
+            else:
+               if parentURL not in linkStack[href]:
+                  linkStack[href][parentURL] = None
+         
+            
+for key in linkStack:
+   print '{0}\t{1}'.format(len(linkStack[key]),key)
+   
+"""
