@@ -2,13 +2,14 @@ import urllib2
 from bs4 import BeautifulSoup
 
 baseURL = 'http://en.wikipedia.org'
-startingURL = baseURL + '/wiki/Outline_of_calculus'
+startingURL = baseURL + '/wiki/calculus'
 threadWords = ['Math','Mathematics','math','mathematics']
 
 filters = [lambda x: x, # eliminates None types - must always be first filter
-            lambda x: x.startswith('/wiki'), # only keep other wikipedia links
-            lambda x: x.count(':') == 0, # exclude 
-            lambda x: x.count('#') == 0]
+           lambda x: x.startswith('/wiki'), # only keep other wikipedia links
+           lambda x: x.count(':') == 0,
+           lambda x: x.count('#') == 0,
+           lambda x: not x.endswith('(disambiguation)')]
 
 req = urllib2.Request(startingURL, headers={'User-Agent' : '6283185307'}) # Tau FTW
 pageHandle = urllib2.urlopen( req )
@@ -17,14 +18,18 @@ soup = BeautifulSoup(pageHandle.read())
 #print soup.body.find(text='Contents').find_all_previous(text=threadWords,limit=1)
 #print soup.prettify()
 #print soup.body.find(text='Contents').find_all_previous()
-print soup.body.find_all(text=threadWords)
+print soup.body.h2.find_all_previous(text=threadWords)
 
+
+"""
 links = [a_tag.get('href') for a_tag in soup.find_all('a') if a_tag]
 for test in filters:
    links = filter(test,links)
    
 for link in links:
    print link
+
+"""
 
 """
 

@@ -70,12 +70,14 @@ if __name__=='__main__':
    threadWords = ['Math','Mathematics','math','mathematics']
    filters = [lambda x: x, # eliminates None types - must always be first filter
               lambda x: x.startswith('/wiki'), # only keep other wikipedia links
-              lambda x: x.count(':') == 0, # exclude 
-              lambda x: x.count('#') == 0]
+              lambda x: x.count(':') == 0, # exclude templates
+              lambda x: x.count('#') == 0] # exclude links to named sections
    
    myPot = Pot(startingURL,threadWords,filters)
    spider = BreadthFirstSearch(startingURL)
    depth = 0
+   
+   #soup.body.h2.find_all_previous(text=threadWords)
    
    while len(spider) and depth < 3;
       url = next(spider)
