@@ -12,8 +12,8 @@ class Pot():
       botHeaders = {'User-Agent' : '628318'} # Tau FTW
       req = urllib2.Request(url, headers=botHeaders)
       pageHandle = urllib2.urlopen( req )
-      self.soup = BeautifulSoup(pageHandle.read())
-      
+      return BeautifulSoup(pageHandle.read())
+   
    def _getLinks(self):
       links = [a_tag.get('href') for a_tag in self.soup.find_all('a') if a_tag]
       for test in self.filters:
@@ -21,7 +21,7 @@ class Pot():
       return links
       
    def links(self):
-      return self._getLinks(self)
+      return self._getLinks()
       
 
 class BreadthFirstSearch():
@@ -78,6 +78,9 @@ if __name__=='__main__':
               lambda x: x.count('#') == 0] # exclude links to named sections
    
    myPot = Pot(startingURL,threadWords,filters)
+   print myPot.links()
+
+if False:
    spider = BreadthFirstSearch(startingURL)
    depth = 0
    
