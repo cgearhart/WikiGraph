@@ -78,7 +78,8 @@ if __name__=='__main__':
               lambda x: x.count('#') == 0] # exclude links to named sections
    
    myPot = Pot(startingURL,threadWords,filters)
-   print myPot.links()
+   for link in myPot.links():
+      print link
 
 if False:
    spider = BreadthFirstSearch(startingURL)
