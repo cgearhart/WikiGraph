@@ -17,7 +17,12 @@ class Pot():
    def _getLinks(self):
       links = [a_tag.get('href') for a_tag in self.soup.find_all('a') if a_tag]
       for test in self.filters:
+         oldlinks = links[:]
          links = filter(test,links)
+         print '\n\n\nfilter removed-----------------------------'
+         linksdiff = set(oldlinks) - set(links)
+         for link in linksdiff:
+            print link
       return links
       
    def links(self):
@@ -78,8 +83,15 @@ if __name__=='__main__':
               lambda x: x.count('#') == 0] # exclude links to named sections
    
    myPot = Pot(startingURL,threadWords,filters)
+   print '\n\nOUTPUT'
    for link in myPot.links():
       print link
+   
+   #check if link counts (has a threadword in summary)
+   
+   #then run filters on all links
+   
+   #repeat
 
 if False:
    spider = BreadthFirstSearch(startingURL)
