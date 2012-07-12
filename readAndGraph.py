@@ -89,21 +89,24 @@ class Gephi():
 
 if __name__=='__main__':
    baseURL = 'http://en.wikipedia.org'
-   startingURL = baseURL + '/wiki/Outline_of_calculus'
+   #startingURL = baseURL + '/wiki/Outline_of_calculus'
+   startingURL = baseURL + '/wiki/calculus'
    threadWords = ['Math','Mathematics','math','mathematics']
    
    
    filters = [lambda x: x, # eliminates None types - must always be first filter
               lambda x: x.startswith('/wiki'), # only keep other wikipedia links
               lambda x: x.count(':') == 0, # exclude templates
-              lambda x: x.count('#') == 0] # exclude links to named sections
+              lambda x: x.count('#') == 0, # exclude links to named sections
+              lambda x: not x.endswith('(disambiguation)')
+              ]
    
    myPot = Pot(startingURL,threadWords,filters)
    print myPot.checkWords()
    
-if False:
+   links = myPot.links()
    print '\n\nOUTPUT'
-   for link in myPot.links():
+   for link in links:
       print link
    
    #check if link counts (has a threadword in summary)
