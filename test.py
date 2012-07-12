@@ -1,3 +1,36 @@
+
+
+class Thing():
+
+   def __init__(self):
+      self.alist = [1,2,3,4,5]
+      self.blist = [6,7,8,9,10]
+
+   def __iter__(self):
+      return self.next()
+      
+   def extendLayer(self):
+      if not self.alist and self.blist:
+         self.alist.extend(self.blist)
+         print self.alist
+         self.blist = []
+      
+   def next(self):
+      while self.alist:
+         yield self.alist.pop(0)
+         if not self.alist:
+            self.extendLayer()
+      
+
+A = Thing()
+
+for thing in A:
+   print thing
+
+
+"""
+################# Part 1 #######################
+
 import urllib2
 from bs4 import BeautifulSoup
 
@@ -20,6 +53,57 @@ soup = BeautifulSoup(pageHandle.read())
 #print soup.body.find(text='Contents').find_all_previous()
 print soup.body.h2.find_all_previous(text=threadWords)
 
+
+############## End Part 1 #######################
+"""
+
+"""
+#################### USELESS ##################
+# Alternate way of running the tests. Define the validation function outside
+# the object, and pass it in when you instantiate
+
+#define the validation function
+def validate(*args,**kargs):
+   print args[0]
+   if not args[0]: # eliminate None types
+      print 'None type fail'
+      return False
+   elif not args[0].startswith('/wiki'):
+      print 'not a wiki link'
+      return False
+   elif not args[0].count(':') == 0:
+      print 'has a colon'
+      return False
+   elif not args[0].count('#') == 0:
+      print 'has a hash'
+      return False
+   else:
+      print 'valid link'
+      return True
+
+#define your object
+class Thing1():
+
+   def __init__(self,testFunction):
+      self.test = testFunction      # pass in the validation function
+      
+   def getLinks(self,alist):
+      return filter(self.test,alist)
+
+aThing = Thing1(validate)
+
+someLinks = [None,'abc','/wiki/a:b','/wiki/a#b','/wiki/abc']
+
+# Now we can filter a list using test
+print 'someLinks before filter'
+print someLinks
+print 'someLinks during filter'
+someLinks = aThing.getLinks(someLinks)
+print 'someLinks after filter'
+print someLinks
+
+#################### END USELESS ##############
+"""
 
 """
 links = [a_tag.get('href') for a_tag in soup.find_all('a') if a_tag]

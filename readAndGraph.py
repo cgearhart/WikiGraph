@@ -6,11 +6,12 @@ class Pot():
    def __init__(self,url,words,filters=lambda x: x):
       self.threadWords = words
       self.filters = filters
-      self.soup = self.makeSoup(self,url)
+      self.url = url
+      self.soup = self.makeSoup(self)
       
-   def makeSoup(self,url):
+   def makeSoup(self):
       botHeaders = {'User-Agent' : '628318'} # Tau FTW
-      req = urllib2.Request(url, headers=botHeaders)
+      req = urllib2.Request(self.url, headers=botHeaders)
       pageHandle = urllib2.urlopen( req )
       self.soup = BeautifulSoup(pageHandle.read())
       
@@ -27,14 +28,27 @@ class Pot():
 class BreadthFirstSearch():
    
    def __init__(self,startingNode):
+      self.depth = 0
       self.stack = [startingNode]
-      self.cache = {}
+      self.nextLayer = []
+      self.visited = {}
       
    def __len__(self):
       return len(self.stack)
       
+   def __iter__(self):
+      return self.next()
+      
+   def next(self):
+      while self.stack:
+         yield self.stack.pop(0)
+      if self.nextLayer:
+         
+      
+      yield None  # This signifies the end of list
+      
    def append(self,nodeToAdd):
-      if nodeToAdd not in self.cache:
+      if nodeToAdd not in self.visited:
          self.stack.append(thingToAdd)
       else:
          pass
@@ -62,17 +76,19 @@ class Gephi():
       
    def asCSV(self):
       return 0 #placeholder
-      
-      
+
+
 if __name__=='__main__':
+
+   # Define 
    baseURL = 'http://en.wikipedia.org'
-   startingURL = baseURL + '/wiki/Outline_of_calculus'
+   startingURL = '/wiki/Outline_of_calculus'
    threadWords = ['Math','Mathematics','math','mathematics']
    filters = [lambda x: x, # eliminates None types - must always be first filter
               lambda x: x.startswith('/wiki'), # only keep other wikipedia links
               lambda x: x.count(':') == 0, # exclude templates
               lambda x: x.count('#') == 0] # exclude links to named sections
-   
+
    myPot = Pot(startingURL,threadWords,filters)
    spider = BreadthFirstSearch(startingURL)
    depth = 0
