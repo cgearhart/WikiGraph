@@ -17,16 +17,11 @@ class Pot():
       return BeautifulSoup(pageHandle.read())
    
    def checkWords(self):
-      content = self.soup.find(id='toc') # can we use toc or should we just do h2?
-      paragraphs =  content.find_all_previous('p')
-      
-      for paragraph in paragraphs:
-         for word in self.threadWords:
-            if re.search(word, str(paragraph)):
-               print 'matched: ' + word
-               return True
-      print 'no match'
-      return False
+      # We also need to check that this isnt a disambiguation page (not all have disambiguation in the title).
+      # http://en.wikipedia.org/wiki/Play
+      # Though we shouldnt run into them with internal links.
+      valid = self.soup.body.h2.find_all_previous(text=self.threadWords) != []
+      return valid
    
    def _getLinks(self):
       links = [a_tag.get('href') for a_tag in self.soup.find_all('a') if a_tag]
@@ -90,7 +85,7 @@ class Gephi():
 if __name__=='__main__':
    baseURL = 'http://en.wikipedia.org'
    #startingURL = baseURL + '/wiki/Outline_of_calculus'
-   startingURL = baseURL + '/wiki/calculus'
+   startingURL = baseURL + '/wiki/Calculus'
    threadWords = ['Math','Mathematics','math','mathematics']
    
    
@@ -104,6 +99,7 @@ if __name__=='__main__':
    myPot = Pot(startingURL,threadWords,filters)
    print myPot.checkWords()
    
+if False:
    links = myPot.links()
    print '\n\nOUTPUT'
    for link in links:
