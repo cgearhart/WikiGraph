@@ -3,18 +3,25 @@ from bs4 import BeautifulSoup
 
 class Pot():
    
-   def __init__(self,url,words):
+   def __init__(self,url,words,filters=lambda x: x):
       self.threadWords = words
+      self.filters = filters
       self.soup = self.makeSoup(self,url)
       
    def makeSoup(self,url):
-      self.soup
+      botHeaders = {'User-Agent' : '628318'} # Tau FTW
+      req = urllib2.Request(url, headers=botHeaders)
+      pageHandle = urllib2.urlopen( req )
+      self.soup = BeautifulSoup(pageHandle.read())
       
-   def get_links(self):
-   
-   def validityTest(self,**kargs):
-      for arg in 
+   def _getLinks(self):
+      links = [a_tag.get('href') for a_tag in self.soup.find_all('a') if a_tag]
+      for test in self.filters:
+         links = filter(test,links)
+      return links
       
+   def links(self):
+      return self._getLinks(self)
       
 
 class BreadthFirstSearch():
@@ -46,8 +53,6 @@ class BreadthFirstSearch():
          node = testMethod(node)
          if node:
             if node not in self.cache:
-               
-            
       
       
 class Gephi():
@@ -60,12 +65,18 @@ class Gephi():
       
       
 if __name__=='__main__':
-   startingURL = 'http:' + '//en.wikipedia.org/wiki/Outline_of_calculus'
+   baseURL = 'http://en.wikipedia.org'
+   startingURL = baseURL + '/wiki/Outline_of_calculus'
    threadWords = ['Math','Mathematics','math','mathematics']
+   filters = [lambda x: x,
+              lambda x: x.startswith('/wiki'),
+              lambda x: x.count(':'),
+              lambda x: x.count('#')]
+   
+   myPot = Pot(startingURL,threadWords,filters)
+   spider = BreadthFirstSearch(startingURL)
    depth = 0
    
-   spider = BreadthFirstSearch(startingURL)
-
    while len(spider) and depth < 3;
       url = next(spider)
 
@@ -86,7 +97,11 @@ while len(linkStack) and depth < 3:
    pageHandle = urllib2.urlopen( req )
    soup = BeautifulSoup(pageHandle.read())
    
-   
+   #tests
+   # lambda x: x
+   # lambda x: x.startswith('/wiki')
+   # lambda x: x.count('#') == 0
+   # lambda x: x.count(':') == 0
    
 
    for link in soup.find_all('a'):
