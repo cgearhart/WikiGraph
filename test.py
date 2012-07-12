@@ -5,6 +5,11 @@ baseURL = 'http://en.wikipedia.org'
 startingURL = baseURL + '/wiki/Outline_of_calculus'
 threadWords = ['Math','Mathematics','math','mathematics']
 
+filters = [lambda x: x, # eliminates None types - must always be first filter
+            lambda x: x.startswith('/wiki'), # only keep other wikipedia links
+            lambda x: x.count(':') == 0, # exclude 
+            lambda x: x.count('#') == 0]
+
 req = urllib2.Request(startingURL, headers={'User-Agent' : '6283185307'}) # Tau FTW
 pageHandle = urllib2.urlopen( req )
 soup = BeautifulSoup(pageHandle.read())
@@ -15,6 +20,9 @@ soup = BeautifulSoup(pageHandle.read())
 print soup.body.find_all(text=threadWords)
 
 links = [a_tag.get('href') for a_tag in soup.find_all('a') if a_tag]
+for test in filters:
+   links = filter(test,links)
+   
 for link in links:
    print link
 

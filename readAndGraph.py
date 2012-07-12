@@ -70,8 +70,8 @@ if __name__=='__main__':
    threadWords = ['Math','Mathematics','math','mathematics']
    filters = [lambda x: x, # eliminates None types - must always be first filter
               lambda x: x.startswith('/wiki'), # only keep other wikipedia links
-              lambda x: x.count(':'), # exclude 
-              lambda x: x.count('#')]
+              lambda x: x.count(':') == 0, # exclude 
+              lambda x: x.count('#') == 0]
    
    myPot = Pot(startingURL,threadWords,filters)
    spider = BreadthFirstSearch(startingURL)
