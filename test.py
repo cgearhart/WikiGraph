@@ -5,28 +5,26 @@ class Thing():
    def __init__(self):
       self.alist = [1,2,3,4,5]
       self.blist = [6,7,8,9,10]
+      self.layers = 0
 
    def __iter__(self):
       return self.next()
       
-   def extendLayer(self):
-      if not self.alist and self.blist:
-         self.alist.extend(self.blist)
-         print self.alist
-         self.blist = []
-      
    def next(self):
       while self.alist:
          yield self.alist.pop(0)
-         if not self.alist:
-            self.extendLayer()
-      
+         if not self.alist and self.blist:
+            self.layers += 1
+            self.alist.extend(self.blist)
+            self.blist = []
+
 
 A = Thing()
 
 for thing in A:
    print thing
 
+print 'there are {} layers'.format(A.layers)
 
 """
 ################# Part 1 #######################
