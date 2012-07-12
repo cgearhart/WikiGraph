@@ -1,3 +1,5 @@
+import re
+
 import urllib2
 from bs4 import BeautifulSoup
 
@@ -13,6 +15,18 @@ class Pot():
       req = urllib2.Request(url, headers=botHeaders)
       pageHandle = urllib2.urlopen( req )
       return BeautifulSoup(pageHandle.read())
+   
+   def checkWords(self):
+      content = self.soup.find(id='toc') # can we use toc or should we just do h2?
+      paragraphs =  content.find_all_previous('p')
+      
+      for paragraph in paragraphs:
+         for word in self.threadWords:
+            if re.search(word, str(paragraph)):
+               print 'matched: ' + word
+               return True
+      print 'no match'
+      return False
    
    def _getLinks(self):
       links = [a_tag.get('href') for a_tag in self.soup.find_all('a') if a_tag]
@@ -77,12 +91,17 @@ if __name__=='__main__':
    baseURL = 'http://en.wikipedia.org'
    startingURL = baseURL + '/wiki/Outline_of_calculus'
    threadWords = ['Math','Mathematics','math','mathematics']
+   
+   
    filters = [lambda x: x, # eliminates None types - must always be first filter
               lambda x: x.startswith('/wiki'), # only keep other wikipedia links
               lambda x: x.count(':') == 0, # exclude templates
               lambda x: x.count('#') == 0] # exclude links to named sections
    
    myPot = Pot(startingURL,threadWords,filters)
+   print myPot.checkWords()
+   
+if False:
    print '\n\nOUTPUT'
    for link in myPot.links():
       print link
