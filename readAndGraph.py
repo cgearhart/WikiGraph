@@ -1,13 +1,20 @@
 import urllib2
 from bs4 import BeautifulSoup
 
-class Soup():
+class Pot():
    
    def __init__(self,url,words):
       self.threadWords = words
-      self.url = url
+      self.soup = self.makeSoup(self,url)
       
+   def makeSoup(self,url):
+      self.soup
+      
+   def get_links(self):
    
+   def validityTest(self,**kargs):
+      for arg in 
+      
       
 
 class BreadthFirstSearch():
@@ -33,6 +40,14 @@ class BreadthFirstSearch():
       
    def isEmpty(self):
       return len(self.stack) == 0
+      
+   def search(self,nodeList=self.stack,testMethod=lambda x: x):
+      for node in nodeList:
+         node = testMethod(node)
+         if node:
+            if node not in self.cache:
+               
+            
       
       
 class Gephi():
