@@ -1,37 +1,58 @@
 import urllib2
 from bs4 import BeautifulSoup
 
+class Soup():
+   
+   def __init__(self,url,words):
+      self.threadWords = words
+      self.url = url
+      
+   
+      
+
 class BreadthFirstSearch():
    
-   def __init__(self,depthLimit):
-      self.stack = []
+   def __init__(self,startingNode):
+      self.stack = [startingNode]
       self.cache = {}
-      self.maxDepth = depthLimit
       
-   def append(self,thingToAdd):
-      if not self.hasBeenSearched(thingToAdd):
+   def __len__(self):
+      return len(self.stack)
+      
+   def append(self,nodeToAdd):
+      if nodeToAdd not in self.cache:
          self.stack.append(thingToAdd)
+      else:
+         pass
    
    def next(self):
-      return self.stack.pop(0)
+      nextNode = self.stack.pop(0)
+      if nextNode not in self.cache:
+         
+      return
       
    def isEmpty(self):
       return len(self.stack) == 0
       
-   def currentDepth(self):
-      return self.stack[0]
       
-   def hasBeenSearched(self,node):
-      return node in self.cache
+class Gephi():
+
+   def __init__(self,inputDict):
+      self.data = inputDict
+      
+   def asCSV(self):
+      return 0 #placeholder
+      
       
 if __name__=='__main__':
    startingURL = 'http:' + '//en.wikipedia.org/wiki/Outline_of_calculus'
    threadWords = ['Math','Mathematics','math','mathematics']
+   depth = 0
    
-   spiderMan = BreadthFirstSearch(3)
-   
-   linkStack.append(startingURL)
-depth = 0
+   spider = BreadthFirstSearch(startingURL)
+
+   while len(spider) and depth < 3;
+      url = next(spider)
 
 """
 req = urllib2.Request(startingURL, headers={'User-Agent' : '6283185307'}) # Tau FTW
