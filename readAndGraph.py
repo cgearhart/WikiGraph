@@ -6,7 +6,7 @@ class Pot():
    def __init__(self,url,words,filters=lambda x: x):
       self.threadWords = words
       self.filters = filters
-      self.soup = self.makeSoup(self,url)
+      self.soup = self.makeSoup(url)
       
    def makeSoup(self,url):
       botHeaders = {'User-Agent' : '628318'} # Tau FTW
@@ -42,19 +42,23 @@ class BreadthFirstSearch():
    def next(self):
       nextNode = self.stack.pop(0)
       if nextNode not in self.cache:
-         
+         pass
       return
       
    def isEmpty(self):
       return len(self.stack) == 0
       
-   def search(self,nodeList=self.stack,testMethod=lambda x: x):
+   def search(self,nodeList=None,testMethod=lambda x: x):
+      if not nodeList:
+         nodeList = self.stack
       for node in nodeList:
          node = testMethod(node)
          if node:
             if node not in self.cache:
-      
-      
+               pass
+   
+
+
 class Gephi():
 
    def __init__(self,inputDict):
@@ -62,8 +66,8 @@ class Gephi():
       
    def asCSV(self):
       return 0 #placeholder
-      
-      
+
+
 if __name__=='__main__':
    baseURL = 'http://en.wikipedia.org'
    startingURL = baseURL + '/wiki/Outline_of_calculus'
@@ -79,7 +83,7 @@ if __name__=='__main__':
    
    #soup.body.h2.find_all_previous(text=threadWords)
    
-   while len(spider) and depth < 3;
+   while len(spider) and depth < 3:
       url = next(spider)
 
 
