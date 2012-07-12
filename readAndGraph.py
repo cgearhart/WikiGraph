@@ -9,6 +9,7 @@ class Pot():
       self.threadWords = words
       self.filters = filters
       self.soup = self.makeSoup(url)
+      self._links = None
       
    def makeSoup(self,url):
       botHeaders = {'User-Agent' : '628318'} # Tau FTW
@@ -23,19 +24,24 @@ class Pot():
       valid = self.soup.body.h2.find_all_previous(text=self.threadWords) != []
       return valid
    
-   def _getLinks(self):
+   def _getLinks(self, printChanges=False):
       links = [a_tag.get('href') for a_tag in self.soup.find_all('a') if a_tag]
       for test in self.filters:
-         oldlinks = links[:]
+         if printChanges:
+            oldlinks = links[:]
          links = filter(test,links)
-         print '\n\n\nfilter removed-----------------------------'
-         linksdiff = set(oldlinks) - set(links)
-         for link in linksdiff:
-            print link
+         if printChanges:
+            print '\n\n\nfilter removed-----------------------------'
+            linksdiff = set(oldlinks) - set(links)
+            for link in linksdiff:
+               print link
       return links
       
-   def links(self):
-      return self._getLinks()
+   def links(self, refresh=False):
+      if refresh or not self._links:
+         #print 'force refresh of links '
+         self._links = self._getLinks()
+      return self._links
       
 
 class BreadthFirstSearch():
@@ -98,6 +104,7 @@ if __name__=='__main__':
    
    myPot = Pot(startingURL,threadWords,filters)
    print myPot.checkWords()
+
    
 if False:
    links = myPot.links()
