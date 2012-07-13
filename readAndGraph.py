@@ -9,98 +9,69 @@ class Pot(object):
       self._url = url
       self._nodeWords = words
       self._filters = [lambda x: x] + filters # always want to filter None first
-      self._links = None
+      self.links = None
       self.isNode = None
       self.soup = None
-      self.verbose = verbose
-      self.refresh()
+      self.refresh(verbose=verbose)
       
-   def __iter__(self):
-      return self.next()
-      
-   def next(self):
-      for link in self._links:
-         yield link
-      
-   def _makeSoup(self):
+   def _makeSoup(self,verbose=False):
       # handle page request and convert page to soup
       botHeaders = {'User-Agent' : '628318'} # Tau FTW
       req = urllib2.Request(self._url, headers=botHeaders)
       pageHandle = urllib2.urlopen( req )
       self.soup = BeautifulSoup(pageHandle.read())
-      if self.verbose:
+      if verbose:
          print '\nFinished the new batch of soup at url: {}\n'.format(self._url)
    
-   def _getLinks(self):
+   def _getLinks(self,verbose=False):
       ''' 
       '''
       a_tags = self.soup.find_all('a')
       links = [(tag.get('href'),tag.get_text()) for tag in a_tags] 
       
       for test in self._filters:
-         if self.verbose:
+         if verbose:
             oldlinks = links[:]
          links = [link for link in links if test(link[0])]
-         if self.verbose:
+         if verbose:
             print '\n\n\nfilter removed-----------------------------'
             linksdiff = set(oldlinks) - set(links)
             for link in linksdiff:
                print link
-      self._links = links
+      self.links = links
    
-   def _isNode(self):
+   def _isNode(self,verbose=False):
       ''' Tests whether the current URL should be considered a node.
       
       The current URL is a node if one of the paragraphs before the TOC contains 
       any of the words in self._nodeWords.
       '''
-      bodyContentTag = self.soup.find(id='bodyContent')
-      for paragraph in bodyContentTag.h2.find_all_previous('p'):
+      #bodyContentTag = self.soup.find(id='bodyContent')
+      self.isNode = False
+      for paragraph in self.soup.h2.find_all_previous('p'):
          if paragraph.find(text=self._nodeWords):
             self.isNode = True
-            if self.verbose:
+            if verbose:
                print '\n{} is a node.\n'.format(self._url)
-            return
-      self.isNode = False
-   
-   @property
-   def nodeWords(self):
-      return self._nodeWords
-   
-   @nodeWords.setter
-   def nodeWords(self,newWords):
-      # Change the words that indicate this URL as a node
-      self._nodeWords = newWords
-      self._isNode()
-   
-   @property
-   def url(self):
-      return self._url
-   
-   @url.setter
-   def url(self,newURL):
-      # Change the target URL
-      print 'I got called!'
-      self._url = newURL
-      self.refresh() # Refresh everything if the target URL changes
-   
-   @property
-   def filters(self):
-      return self._filters
       
-   @filters.setter
-   def filters(self,newFilters):
-      # Change the filters used on page links
-      self._filters[1:] = newFilters # Don't allow the 'None' test to be changed
-      self._getLinks() # Re-filter the links if the filters are changed
-      
-   def refresh(self):
+   def refresh(self,url=None,filters=None,nodeWords=None,verbose=False):
       # Force a refresh of the object state
-      if self.verbose:
-         print 'Forcing Pot refresh of URL: {}'.format(self._url)
-      self._makeSoup()
-      self._getLinks()
-      self._isNode()
+      if verbose:
+         print 'Forcing Pot refresh.'
+      if url:
+         print 'URL changed from {} to {}'.format(self._url,url)
+         self._url = url
+      if filters:
+         print 'The filters changed.'
+      self._filters[1:] = filters
+      if nodeWords:
+         print ('The key words defining graph edges have been changed from {} '
+                'to {}'.format(self._nodeWords,nodeWords)
+               )
+         self._nodeWords = nodeWords
+      self._makeSoup(verbose)  # update the soup 
+      self._getLinks(verbose)  # refresh the links
+      self._isNode(verbose)   # determine if the URL is a node
       
 
 class BreadthFirstSearch():
@@ -169,19 +140,14 @@ if __name__=='__main__':
       startingURL = baseURL + tURL
       myPot = Pot(startingURL,threadWords,filters,verbose=False)
       
-      generatorWorked = False # Haven't tried yet
-      
       print 'Attempting to use URL: {}\n'.format(startingURL)
       
       if myPot.isNode:
          print '\n{} is a node!!!\n'.format(startingURL)
          
-         for link in myPot:
-            generatorWorked = True
+         for link in myPot.links:
             print link
             
-         if generatorWorked:
-            print '\nmyPot is a generator!!!\n'
       else:
          print '\n{} is NOT a node!!!\n'.format(startingURL)
 
@@ -192,26 +158,26 @@ if __name__=='__main__':
 
    print '## FORCE REFRESH'
 
-   testPot.refresh()
+   testPot.refresh(verbose=True)
    print '\nFinished force refresh\n'
 
    print '## URL'
 
-   print baseURL + testURLs[1]
-   testPot.url = baseURL + testURLs[1]
-   print testPot._url
+   newURL = baseURL + testURLs[1]
+   testPot.refresh(newURL,verbose=True)
    print '\nChanged the URL\n'
    
    print '## NODE WORDS'
-
-   testPot.nodeWords = ['Matt'] # this should break things
+   words = ['Matt']
+   testPot.refresh(nodeWords=words,verbose=True) # this should break things
    print '\nThis should say False: {}'.format(testPot.isNode)
    testPot.nodeWords = threadWords
 
    print '## FILTERS'
 
-   testPot.filters = [lambda x: not x] # should return zero links - might break things
-   testLinks = [link for link in testPot]
+   filters = [lambda x: not x] # should return zero links - might break things
+   testPot.refresh(filters=filters,verbose=True)
+   testLinks = [link for link in testPot.links]
    if not testLinks:
       print '\nAll links removed.\n'
    print '\nBroke the links (hopefully) by removing them all.\n'
