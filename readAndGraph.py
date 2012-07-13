@@ -1,47 +1,106 @@
-import re
 
 import urllib2
 from bs4 import BeautifulSoup
 
-class Pot():
+class Pot(object):
+   # Wrapper/helper class for BeautifulSoup
    
-   def __init__(self,url,words,filters=lambda x: x):
-      self.threadWords = words
-      self.filters = filters
-      self.soup = self.makeSoup(url)
+   def __init__(self,url,words,filters,verbose=False):
+      self._url = url
+      self._nodeWords = words
+      self._filters = [lambda x: x] + filters # always want to filter None first
       self._links = None
+      self.isNode = None
+      self.soup = None
+      self.verbose = verbose
+      self.refresh()
       
-   def makeSoup(self,url):
+   def __iter__(self):
+      return self.next()
+      
+   def next(self):
+      for link in self._links:
+         yield link
+      
+   def _makeSoup(self):
+      # handle page request and convert page to soup
       botHeaders = {'User-Agent' : '628318'} # Tau FTW
-      req = urllib2.Request(url, headers=botHeaders)
+      req = urllib2.Request(self._url, headers=botHeaders)
       pageHandle = urllib2.urlopen( req )
-      return BeautifulSoup(pageHandle.read())
+      self.soup = BeautifulSoup(pageHandle.read())
+      if self.verbose:
+         print '\nFinished the new batch of soup at url: {}\n'.format(self._url)
    
-   def checkWords(self):
-      # We also need to check that this isnt a disambiguation page (not all have disambiguation in the title).
-      # http://en.wikipedia.org/wiki/Play
-      # Though we shouldnt run into them with internal links.
-      valid = self.soup.body.h2.find_all_previous(text=self.threadWords) != []
-      return valid
-   
-   def _getLinks(self, printChanges=False):
-      links = [a_tag.get('href') for a_tag in self.soup.find_all('a') if a_tag]
-      for test in self.filters:
-         if printChanges:
+   def _getLinks(self):
+      ''' 
+      '''
+      a_tags = self.soup.find_all('a')
+      links = [(tag.get('href'),tag.get_text()) for tag in a_tags] 
+      
+      for test in self._filters:
+         if self.verbose:
             oldlinks = links[:]
-         links = filter(test,links)
-         if printChanges:
+         links = [link for link in links if test(link[0])]
+         if self.verbose:
             print '\n\n\nfilter removed-----------------------------'
             linksdiff = set(oldlinks) - set(links)
             for link in linksdiff:
                print link
-      return links
+      self._links = links
+   
+   def _isNode(self):
+      ''' Tests whether the current URL should be considered a node.
       
-   def links(self, refresh=False):
-      if refresh or not self._links:
-         #print 'force refresh of links '
-         self._links = self._getLinks()
-      return self._links
+      The current URL is a node if one of the paragraphs before the TOC contains 
+      any of the words in self._nodeWords.
+      '''
+      bodyContentTag = self.soup.find(id='bodyContent')
+      for paragraph in bodyContentTag.h2.find_all_previous('p'):
+         if paragraph.find(text=self._nodeWords):
+            self.isNode = True
+            if self.verbose:
+               print '\n{} is a node.\n'.format(self._url)
+            return
+      self.isNode = False
+   
+   @property
+   def nodeWords(self):
+      return self._nodeWords
+   
+   @nodeWords.setter
+   def nodeWords(self,newWords):
+      # Change the words that indicate this URL as a node
+      self._nodeWords = newWords
+      self._isNode()
+   
+   @property
+   def url(self):
+      return self._url
+   
+   @url.setter
+   def url(self,newURL):
+      # Change the target URL
+      print 'I got called!'
+      self._url = newURL
+      self.refresh() # Refresh everything if the target URL changes
+   
+   @property
+   def filters(self):
+      return self._filters
+      
+   @filters.setter
+   def filters(self,newFilters):
+      # Change the filters used on page links
+      self._filters[1:] = newFilters # Don't allow the 'None' test to be changed
+      self._getLinks() # Re-filter the links if the filters are changed
+      
+   def refresh(self):
+      # Force a refresh of the object state
+      if self.verbose:
+         print 'Forcing Pot refresh of URL: {}'.format(self._url)
+      self._makeSoup()
+      self._getLinks()
+      self._isNode()
       
 
 class BreadthFirstSearch():
@@ -90,42 +149,71 @@ class Gephi():
 
 if __name__=='__main__':
    baseURL = 'http://en.wikipedia.org'
-   #startingURL = baseURL + '/wiki/Outline_of_calculus'
-   startingURL = baseURL + '/wiki/Calculus'
    threadWords = ['Math','Mathematics','math','mathematics']
    
-   
-   filters = [lambda x: x, # eliminates None types - must always be first filter
-              lambda x: x.startswith('/wiki'), # only keep other wikipedia links
+   filters = [lambda x: x.startswith('/wiki'), # only keep other wikipedia links, and exclude foreign languages
               lambda x: x.count(':') == 0, # exclude templates
               lambda x: x.count('#') == 0, # exclude links to named sections
-              lambda x: not x.endswith('(disambiguation)')
+              lambda x: not x.endswith('(disambiguation)') # obvious
               ]
    
-   myPot = Pot(startingURL,threadWords,filters)
-   print myPot.checkWords()
+   testURLs =  ['/wiki/Outline_of_calculus', # is a node
+                '/wiki/Calculus',   # is a node
+                '/wiki/Art'   # is NOT a node
+                ]
+   
+   
+   print '##################### LET\'S TRY TESTING ##################'
 
-   
-if False:
-   links = myPot.links()
-   print '\n\nOUTPUT'
-   for link in links:
-      print link
-   
-   #check if link counts (has a threadword in summary)
-   
-   #then run filters on all links
-   
-   #repeat
+   for tURL in testURLs:
+      startingURL = baseURL + tURL
+      myPot = Pot(startingURL,threadWords,filters,verbose=False)
+      
+      generatorWorked = False # Haven't tried yet
+      
+      print 'Attempting to use URL: {}\n'.format(startingURL)
+      
+      if myPot.isNode:
+         print '\n{} is a node!!!\n'.format(startingURL)
+         
+         for link in myPot:
+            generatorWorked = True
+            print link
+            
+         if generatorWorked:
+            print '\nmyPot is a generator!!!\n'
+      else:
+         print '\n{} is NOT a node!!!\n'.format(startingURL)
 
-if False:
-   spider = BreadthFirstSearch(startingURL)
-   depth = 0
+   print '#### LET\'S TRY CHANGING THINGS FOR A SINGLE INSTANCE'
+
+   url = baseURL + testURLs[0]
+   testPot = Pot(url,threadWords,filters,verbose=True)
+
+   print '## FORCE REFRESH'
+
+   testPot.refresh()
+   print '\nFinished force refresh\n'
+
+   print '## URL'
+
+   print baseURL + testURLs[1]
+   testPot.url = baseURL + testURLs[1]
+   print testPot._url
+   print '\nChanged the URL\n'
    
-   #soup.body.h2.find_all_previous(text=threadWords)
-   
-   while len(spider) and depth < 3:
-      url = next(spider)
+   print '## NODE WORDS'
+
+   testPot.nodeWords = ['Matt'] # this should break things
+   print '\nThis should say False: {}'.format(testPot.isNode)
+   testPot.nodeWords = threadWords
+
+   print '## FILTERS'
+
+   testPot.filters = [lambda x: not x] # should return zero links - might break things
+   testLinks = [link for link in testPot]
+   if not testLinks:
+      print '\nAll links removed.\n'
+   print '\nBroke the links (hopefully) by removing them all.\n'
 
 
-   

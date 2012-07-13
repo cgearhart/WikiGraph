@@ -1,4 +1,4 @@
-
+"""
 
 class Thing():
 
@@ -25,15 +25,19 @@ for thing in A:
    print thing
 
 print 'there are {} layers'.format(A.layers)
-
+  
 """
+
+  
 ################# Part 1 #######################
 
 import urllib2
 from bs4 import BeautifulSoup
 
 baseURL = 'http://en.wikipedia.org'
-startingURL = baseURL + '/wiki/calculus'
+#startingURL = baseURL + '/wiki/outline_of_calculus'
+#startingURL = baseURL + '/wiki/calculus'
+startingURL = baseURL + '/wiki/Limit_(mathematics)'
 threadWords = ['Math','Mathematics','math','mathematics']
 
 filters = [lambda x: x, # eliminates None types - must always be first filter
@@ -49,11 +53,17 @@ soup = BeautifulSoup(pageHandle.read())
 #print soup.body.find(text='Contents').find_all_previous(text=threadWords,limit=1)
 #print soup.prettify()
 #print soup.body.find(text='Contents').find_all_previous()
-print soup.body.h2.find_all_previous(text=threadWords)
+#print soup.body.h2.find_all_previous(text=threadWords)
+
+#print soup.find(id='bodyContent').find('p')
+#print soup.find(id='bodyContent').p.find_all(text=threadWords)
+
+for stuff in soup.find(id='bodyContent').find(id='toc').find_all_previous('p'):
+   print stuff.find(text=threadWords)
 
 
 ############## End Part 1 #######################
-"""
+
 
 """
 #################### USELESS ##################
