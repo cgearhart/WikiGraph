@@ -1,6 +1,7 @@
 
 import urllib2
 from bs4 import BeautifulSoup
+from HTMLParser import HTMLParseError
 
 class Pot():
    # Wrapper/helper class for BeautifulSoup - also a graphObj for search
@@ -26,8 +27,9 @@ class Pot():
          self.soup = BeautifulSoup(pageHandle.read())
          if verbose:
             print '\nFinished the new batch of soup at url: {}\n'.format(self._url)
-      except:
+      except HTMLParseError, msg:
          print '_makeSoup() error!'
+         print msg
          print self.node
    
    def _getLinks(self,verbose=False):
@@ -53,23 +55,32 @@ class Pot():
       any of the words in self._nodeWords.
       '''
       self.isAtNode = False
-      headingTag = self.soup.h2
+      headingTag = self.soup.find(id="toctitle")
       
       # TODO: some pages don't have enough content to have <h2>; this should
       # be modified to handle those cases more elegantly (like "if no h2, search all")
+      
+      # p.parent does not contain a table tag - the "part of science" tables
+      # screw things up
       try: 
          if headingTag:
             for paragraph in headingTag.find_all_previous('p'):
                if paragraph.find(text=self._nodeWords):
                   self.isAtNode = True
-                  if verbose:
+                  # some tables in the summary section contain links to mathematics
+                  # or similar topics; I haven't found a better way to exclude them
+                  for parent in paragraph.parents:
+                     if parent.name == 'table':
+                        self.isAtNode = False   # some tables contain key words
+                  if self.isAtNode and verbose:
                      print '\n{} is a node.\n'.format(self._url)
-      except AttributeError:
+      except AttributeError, msg:
          print 'Error!'
          print 'Node: {}'.format(self.node)
+         print msg
                
-   def moveTo(self,linkTuple):
-      self.refresh(linkTuple=linkTuple)
+   def moveTo(self,linkTuple,verbose=False):
+      self.refresh(linkTuple=linkTuple,verbose=verbose)
       
    def refresh(self,filters=None,nodeWords=None,linkTuple=None,verbose=False):
       # Force a refresh of the object state
@@ -104,16 +115,20 @@ class DepthLimitedBFS():
       self._stack = [startingNode]
       self._nextLayerStack = []
       self._graphObj = graphObj
+      self._id = 0
       self.depthLimit = depthLimit
       self.visited = {}
       self.graph = {}
       self.depth = 0
       
    def search(self,verbose=False):
+   
+      # Loop over the stack to a limited depth to build a dict of nodes
       while self._stack and self.depth <= self.depthLimit:
          possibleNode = self._stack.pop(0)
-         if possibleNode not in self.visited:
-            self.visited[possibleNode] = None
+         if possibleNode not in self.visited: # don't visit the same link twice
+            self.visited[possibleNode] = self._id
+            self._id += 1
             self._graphObj.moveTo(possibleNode)
             if self._graphObj.isAtNode:
                links = self._graphObj.links
@@ -131,19 +146,36 @@ class DepthLimitedBFS():
          if not self._stack and self._nextLayerStack:
             self._nextLayerStack = list(set(self._nextLayerStack))
             print r'###### End of layer {} ######'.format(self.depth)
-            print r'###### Links in next layer: {} ######\n'.format(len(self._nextLayerStack))
+            print r'###### Links in next layer: {} ######'.format(len(self._nextLayerStack)) + '\n'
             self._stack.extend(self._nextLayerStack)
             self._nextLayerStack = []
             self.depth += 1
+   
+   def write(self,nodeFileName='node.csv',edgeFileName='edge.csv'):
 
-
-class Gephi():
-
-   def __init__(self,inputDict):
-      self.data = inputDict
+      # write all visited nodes to the node file as csv
+      nodeFileObj = open(nodeFileName,'w')
+      nodeFileObj.write('id;label\n')
+      for key,nodeID in self.visited.iteritems():
+         nodeLabel = key[1].encode('ascii','ignore')
+         thisLine = '{0};{1}\n'.format(str(nodeID),nodeLabel)
+         nodeFileObj.write(thisLine)
+      nodeFileObj.close()
       
-   def asCSV(self):
-      return 0 #placeholder
+      # write all the edges to the edge file as csv
+      edgeID = 0
+      edgeFileObj = open(edgeFileName,'w')
+      edgeFileObj.write('id;source;target\n')
+      for key,values in self.graph.iteritems():
+         sourceText = key[1].encode('ascii','ignore')
+         for targetNode in values:
+            if targetNode in self.graph:  # only write edges that connect to things that are nodes
+               targetText = targetNode[1].encode('ascii','ignore')
+               thisLine = '{0};{1};{2}\n'.format(str(edgeID),sourceText,targetText)
+               edgeFileObj.write(thisLine)
+            
+               edgeID += 1
+      edgeFileObj.close()
       
 def testSearcher(verbose=False):
    baseURL = 'http://en.wikipedia.org'
@@ -164,7 +196,7 @@ def testSearcher(verbose=False):
    
    print 'Test graph:\n'
    for key,value in nodeSearcher.graph.iteritems():
-      print "\nNode: {}\n".format(key)
+      print "\n\nNode: {}\n".format(key)
       print "Edges:"
       for thing in value:
          print '\t{}'.format(thing)
@@ -233,11 +265,51 @@ def testPot():
    if not testLinks:
       print '\nAll links removed.\n'
    print '\nBroke the links (hopefully) by removing them all.\n'
+   
+def testWhole(verbose=False):
+   baseURL = 'http://en.wikipedia.org'
+   threadWords = ['Math','Mathematics','Calculus',
+                  'math','mathematics','calculus'
+                 ]
+   
+   filters = [lambda x: x.startswith('/wiki'), # only keep other wikipedia links, and exclude foreign languages
+              lambda x: x.count(':') == 0, # exclude templates
+              lambda x: x.count('#') == 0, # exclude links to named sections
+              lambda x: not x.endswith('(disambiguation)') # obvious
+             ]
+             
+   tailURL = '/wiki/Outline_of_calculus'
+   
+   myPot = Pot(threadWords,filters,baseURL)   
+   startingTuple = (tailURL, 'Outline of Calculus')
+   nodeSearcher = DepthLimitedBFS(myPot,startingTuple,depthLimit=2)
+   nodeSearcher.search()
+   
+   nodeSearcher.write()
 
+def testSite(verbose=True):
+   baseURL = 'http://en.wikipedia.org'
+   threadWords = ['Math','Mathematics','Calculus',
+                  'math','mathematics','calculus'
+                 ]
+   
+   filters = [lambda x: x.startswith('/wiki'), # only keep other wikipedia links, and exclude foreign languages
+              lambda x: x.count(':') == 0, # exclude templates
+              lambda x: x.count('#') == 0, # exclude links to named sections
+              lambda x: not x.endswith('(disambiguation)') # obvious
+             ]
+             
+   tailURL = '/wiki/Calculus'
+   
+   myPot = Pot(threadWords,filters,baseURL)   
+   startingTuple = (tailURL, 'Mathematics')
+   nodeSearcher = DepthLimitedBFS(myPot,startingTuple)
+   nodeSearcher.search(verbose)
+   
 
 if __name__=='__main__':
 
-   testSearcher(verbose=True)
+   testWhole()
 
    
 
