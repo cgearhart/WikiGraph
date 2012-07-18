@@ -4,12 +4,11 @@
 # WikiGraph.py                                                                 #
 #                                                                              #
 # Author: cgearhart                                                            #
-# https://github.com/cgearhart                                                 #
 # Date: 7/17/12                                                                #
+# https://github.com/cgearhart                                                 #
 #                                                                              #
 ################################################################################
 import urllib2
-import inspect # used to show the filter in verbose mode of _getLinks()
 from bs4 import BeautifulSoup
 from HTMLParser import HTMLParseError
 
@@ -67,7 +66,7 @@ class Pot():
             oldlinks = links[:]
          links = filter(test,links)
          if verbose:
-            print '\n' + inspect.getsource(test).strip() + '\n'
+
             print '\n\n\nfilter removed-----------------------------'
             linksdiff = set(oldlinks) - set(links)
             for link in linksdiff:
